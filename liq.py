@@ -80,11 +80,25 @@ top_tick = bottom_tick + tick_spacing
 price = tick_to_price(tick)
 adjusted_price = price / (10 ** (decimals1 - decimals0))
 
+# Print range
+adjusted_bottom_tick_price = 1 / (
+    TICK_BASE**bottom_tick / (10 ** (decimals1 - decimals0))
+)
+adjusted_top_tick_price = 1 / (TICK_BASE**top_tick / (10 ** (decimals1 - decimals0)))
+
+print("Bas du range={}".format(adjusted_bottom_tick_price))
+print("Haut du range={}".format(adjusted_top_tick_price))
+
 # Compute square roots of prices corresponding to the bottom and top ticks
 sa = tick_to_price(bottom_tick // 2)
 sb = tick_to_price(top_tick // 2)
 sp = price**0.5
 
+print("bottom_tick", bottom_tick)
+print("sa", sa)
+
+print("top_tick", top_tick)
+print("sb", sb)
 # Compute real amounts of the two assets
 amount0 = L * (sb - sp) / (sp * sb)
 amount1 = L * (sp - sa)
@@ -93,11 +107,10 @@ amount1 = L * (sp - sa)
 adjusted_amount0 = amount0 / 10**decimals0
 adjusted_amount1 = amount1 / 10**decimals1
 
-adjusted_bottom_tick_price = 1 / (TICK_BASE**bottom_tick / (10 ** (decimals1 - decimals0)))
-adjusted_top_tick_price = 1 / (TICK_BASE**top_tick / (10 ** (decimals1 - decimals0)))
+print("sp", sp)
+print("amount0", amount0)
+print("amount1", amount1)
 
-print("Bas du range={}".format(adjusted_bottom_tick_price))
-print("Haut du range={}".format(adjusted_top_tick_price))
 
 print(
     "Current price: {:.6f} {} for 1 {} ({:.6f} {} for 1 {})".format(
