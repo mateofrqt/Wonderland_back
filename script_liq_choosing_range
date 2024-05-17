@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+
+#
+# Example that prints the current virtual amounts of assets in the 0.3% USDC/ETH pool
+# using liquidity data from the Uniswap v3 subgraph.
+#
+
+import json
+import urllib.request
+import math
+import sys
+
+ID_pool = input("Entrez l'adresse de la pool : ")
+# Look at the USDC/ETH 0.3% pool
+POOL_ID = ID_pool
+
+# if passed in command line, use an alternative pool ID
+if len(sys.argv) > 1:
+    POOL_ID = sys.argv[1]
+
+URL = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3"
+TICK_BASE = 1.0001
+
+# GraphQL query to get the pool information
+query = """query pools($pool_id: ID!) {
+  pools (where: {id: $pool_id}) {
+    tick
+    liquidity
+    feeTier
+    token0 {
+      symbol
+      decimals
+    }
+    token1 {
+      symbol
+      decimals
+    }
+  }
+}"""
+
+# Query the subgraph
+req = urllib.request.Request(URL)
+req.add_header("Content-Type", "application/json; charset=utf-8")
+jsondata = {"query": query, "variables": {"pool_id": POOL_ID}}
+jsondataasbytes = json.dumps(jsondata).encode("utf-8")
+req.add_header("Content-Length", len(jsondataasbytes))
+response = urllib.request.urlopen(req, jsondataasbytes)
+obj = json.load(response)
+pool = obj["data"]["pools"][0]
+
+# Extract liquidity from the response
+L = int(pool["liquidity"])
+tick = int(pool["tick"])
+écartement_brut = float(input("Entrez le range souhaitez en % : "))
+écartement = écartement_brut/100
+
+token0 = pool["token0"]["symbol"]
+token1 = pool["token1"]["symbol"]
+decimals0 = int(pool["token0"]["decimals"])  # USDC has 6 decimals
+decimals1 = int(pool["token1"]["decimals"])  # WETH has 18 decimals
+
+# math
+prix = (10 ** (decimals1 - decimals0)) / (1.0001**tick)
+range_bas = prix * (1 - (écartement / 2))
+range_haut = prix * (1 + (écartement / 2))
+top_tick = round(
+    math.log10((10 ** (decimals1 - decimals0)) / range_bas) / math.log10(1.0001)
+)
+bottom_tick = round(
+    math.log10((10 ** (decimals1 - decimals0)) / range_haut) / math.log10(1.0001)
+)
+sa = math.sqrt(1.0001**bottom_tick)
+sb = math.sqrt(1.0001**top_tick)
+sp = (1.0001**tick) ** 0.5
+amount0 = (L * (sb - sp) / (sb * sp)) / (10**decimals0)
+amount1 = (L * (sp - sa)) / (10**decimals1)
+total = amount0 + (amount1 * prix)
+
+print(
+    "Amounts at the current price in the range : {:.2f} - {:.2f} is {:.2f} {} and {:.2f} {}".format(
+        range_bas, range_haut, amount0, token0, amount1, token1
+    )
+)
+
+print(
+    "total amount in USDC if the pair has USDC as second element is {:.2f}".format(
+        total
+    )
+)
