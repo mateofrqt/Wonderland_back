@@ -54,3 +54,12 @@ def fee(chunk):
     fee = chunk["volume"] / liquidity(chunk) * chunk["fee"]
 
     return fee
+
+results = []
+
+for i, chunk in enumerate(pd.read_csv(csv_file, chunksize=chunk_size)):
+    print(f"Processing chunk {i + 1}")
+    processed_chunk = fee(chunk)
+    results.append(processed_chunk)
+
+rendement = sum(results)
